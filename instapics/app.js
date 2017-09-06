@@ -31,12 +31,70 @@ app.use(function(req, res, next){
   next();
 });
 
+// Instagram stuff
+api.use({
+  client_id:'df327d79399a48e88ba4858e5c09a622',
+  client_secret:'1a1dcaa8237446a18209af1da29514c2'
+});
+
+var redirect_uri = 'http://localhost:3000/handleauth';
+
+exports.authorize_user = function(req, res) {
+  res.redirect(api.get_authorization_url(redirect_uri, { scope: ['likes'], state: 'a state' }));
+};
+
+exports.handleauth = function(req, res) {
+  api.authorize_user(req.query.code, redirect_uri, function(err, result) {
+    if (err) {
+      console.log(err.body);
+      res.send("Didn't work");
+    } else {
+      /*
+      console.log('Access Token ' + result.access_token);
+      console.log('User ID ' + result.user.id);
+      res.send('You made it!!');
+      */
+      req.session.accesstoken = result.access_token;
+      req.session.uid = result.user.id;
+
+      api.use({access_token: req.session.accesstoken});
+      res.redirect('/main');
+    }
+  });
+};
+
 // Index route
 app.get('/', function(req, res, next){
   res.render('index', {
     title: 'Welcome'
   });
 });
+
+// Main route
+app.get('/main', function(req, res, next){
+  api.user(req.session.uid, function(err, result, remaining, limit){
+    if(err){
+      res.send(err);
+    }
+    res.render('main', {
+      title: 'My Instagram',
+      user: result
+    });
+  });
+});
+
+// Logout route
+app.get('/logout', function(req, res, next){
+  req.session.accesstoken = false;
+  req.session.uid = false;
+  res.redirect('/');
+});
+
+// Login route
+app.get('/login', exports.authorize_user);
+
+// Handleauth route
+app.get('/handleauth', exports.handleauth);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
