@@ -28,13 +28,26 @@ app.use(session({
 
 // Global vars
 app.use(function(req, res, next){
+  // Format date
+  res.locals.formatDate = function(date){
+    var myDate = new Date(date *1000);
+    return myDate.toLocalString();
+  }
+
+  // Is user logged in?
+  if(req.session.accesstoken && req.session.accesstoken != 'undefined'){
+    res.locals.isLoggedIn = true;
+  } else {
+    res.locals.isLoggedIn = false;
+  }
+
   next();
 });
 
 // Instagram stuff
 api.use({
-  client_id:'df327d79399a48e88ba4858e5c09a622',
-  client_secret:'1a1dcaa8237446a18209af1da29514c2'
+  client_id:'',
+  client_secret:''
 });
 
 var redirect_uri = 'http://localhost:3000/handleauth';
@@ -76,9 +89,15 @@ app.get('/main', function(req, res, next){
     if(err){
       res.send(err);
     }
-    res.render('main', {
-      title: 'My Instagram',
-      user: result
+    api.user_media_recent(req.session.uid, {}, function(err, medias, pagination, remaining, limit){
+      if(err){
+        res.send(err);
+      }
+      res.render('main', {
+        title: 'My Instagram',
+        user: result,
+        medias: medias
+      });
     });
   });
 });
