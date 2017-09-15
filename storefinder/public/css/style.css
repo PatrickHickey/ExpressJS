@@ -46,3 +46,13 @@ input[type='text'] {
 .clr {
   clear: both;
 }
+
+#delete-form {
+  float: right;
+  margin: 10px;
+}
+
+#map {
+  height: 400px;
+  width: 100%;
+}
